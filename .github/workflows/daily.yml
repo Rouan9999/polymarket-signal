@@ -1,0 +1,48 @@
+name: Daily Pipeline
+
+on:
+  schedule:
+    - cron: "0 13 * * *"   # 13:00 UTC = 9:00 AM ET (EDT) / 8:00 AM ET (EST)
+  workflow_dispatch:        # allow manual trigger from Actions UI
+
+jobs:
+  daily-pipeline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write       # needed to commit DB back to repo
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install deps
+        run: pip install -r requirements.txt
+
+      - name: Run daily pipeline
+        env:
+          GMAIL_USER:         ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          EMAIL_TO:           ${{ secrets.EMAIL_TO }}
+          POLY_DATA_API:      ${{ secrets.POLY_DATA_API }}
+          DB_PATH:            data/polymarket.db
+          MODE:               paper
+        run: python -m src.run_daily
+
+      - name: Commit updated DB
+        run: |
+          git config user.name  "polymarket-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add data/polymarket.db
+          if git diff --staged --quiet; then
+            echo "No DB changes to commit"
+          else
+            git commit -m "Daily run: $(date -u +%Y-%m-%d)"
+            git push
+          fi

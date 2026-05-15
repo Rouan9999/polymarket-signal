@@ -4,7 +4,8 @@ __pycache__/
 .env
 venv/
 .venv/
-data/*.db
+# Keep the production DB in git so cron persists state across runs.
+# Only ignore SQLite's transient sidecar files.
 data/*.db-journal
 data/*.db-wal
 data/*.db-shm
