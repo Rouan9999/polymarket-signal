@@ -8,6 +8,7 @@ import sys
 from . import fetch_leaderboard, fetch_positions, aggregate
 from . import filter as filter_mod
 from . import persist
+from . import notify
 from .db import get_conn, init_db
 
 _SEP = "=" * 60
@@ -62,6 +63,11 @@ def run_daily() -> int:
     print(f"  Deduped:      {deduped}")
     print()
     persist.print_open_book()
+
+    print(_SEP)
+    print("Step 6: Sending email digest...")
+    print(_SEP)
+    notify.notify_signals(candidates, snapshot_date)
     return 0
 
 
